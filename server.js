@@ -30,10 +30,10 @@
 
 import express from "express";
 import { randomUUID } from "crypto";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { z } from "zod";
 
 // ── Salesforce Auth ──────────────────────────────────────────────────────────
 
@@ -295,129 +295,166 @@ async function tool_create_case_from_call({ subject, description, accountId, con
 
 // ── MCP Server Builder ───────────────────────────────────────────────────────
 
+const TOOLS = [
+  {
+    name: "query_records",
+    description: "Execute a SOQL query against Salesforce and return matching records. Use for any data retrieval including contacts, accounts, opportunities, cases, and custom objects.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        soql:  { type: "string", description: "Full SOQL query, e.g. SELECT Id, Name FROM Account WHERE Industry = 'Finance'" },
+        limit: { type: "integer", minimum: 1, maximum: 2000, description: "Max records to return if LIMIT not already in query" },
+      },
+      required: ["soql"],
+    },
+  },
+  {
+    name: "get_record_by_id",
+    description: "Fetch a single Salesforce record by its ID. Returns all or specified fields.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobject: { type: "string", description: "Salesforce object API name, e.g. Account, Contact, Case, Opportunity" },
+        id:      { type: "string", description: "Salesforce record ID, e.g. 001Kg00000DVlN4IAL" },
+        fields:  { type: "array", items: { type: "string" }, description: "Field API names to return. If omitted, returns all fields." },
+      },
+      required: ["sobject", "id"],
+    },
+  },
+  {
+    name: "search_records",
+    description: "Full-text SOSL search across Salesforce objects. Use when you have a name or keyword but not a specific ID or field value.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        searchTerm: { type: "string", description: "Text to search for, e.g. 'Tony Stark' or 'Fantastic Finance'" },
+        sobjects:   { type: "array", items: { type: "string" }, description: "Objects to search in, e.g. ['Contact','Account']. Defaults to Contact + Account." },
+        fields:     { type: "array", items: { type: "string" }, description: "Fields to return per object. Defaults to Id, Name." },
+        limit:      { type: "integer", minimum: 1, maximum: 200, default: 10, description: "Max results per object" },
+      },
+      required: ["searchTerm"],
+    },
+  },
+  {
+    name: "create_record",
+    description: "Create a new record in any Salesforce object. Returns the new record ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobject: { type: "string", description: "Salesforce object API name, e.g. Case, Contact, Opportunity" },
+        fields:  { type: "object", description: "Field API names and values, e.g. {\"Subject\": \"Login issue\", \"Status\": \"New\"}", additionalProperties: true },
+      },
+      required: ["sobject", "fields"],
+    },
+  },
+  {
+    name: "update_record",
+    description: "Update an existing Salesforce record by ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobject: { type: "string", description: "Salesforce object API name" },
+        id:      { type: "string", description: "Salesforce record ID" },
+        fields:  { type: "object", description: "Fields to update with new values", additionalProperties: true },
+      },
+      required: ["sobject", "id", "fields"],
+    },
+  },
+  {
+    name: "describe_object",
+    description: "Get field metadata (names, types, labels) for any Salesforce object. Use to discover available fields before querying.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobject: { type: "string", description: "Salesforce object API name, e.g. Contact, Account, Case" },
+      },
+      required: ["sobject"],
+    },
+  },
+  {
+    name: "ContactLookupByPhone",
+    description: "Look up a CRM Contact and their Account by phone number (CLI). Returns contact details, account info, and all custom fields (insurance, KYC, prescription, etc.). Primary tool for caller screen-pop on inbound calls.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        phoneNumber: { type: "string", description: "Caller phone number, e.g. +15144469113 or +441135550501" },
+      },
+      required: ["phoneNumber"],
+    },
+  },
+  {
+    name: "GetAccountSummary",
+    description: "Retrieve full account details including open opportunities (count, total pipeline value, list) and open cases for a given Salesforce Account ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        accountId: { type: "string", description: "Salesforce Account ID, e.g. 001Kg00000DVlN4IAL" },
+      },
+      required: ["accountId"],
+    },
+  },
+  {
+    name: "GetOpenOpportunities",
+    description: "List all open (not closed) Opportunities for a Salesforce Account, with name, stage, amount, and close date.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        accountId: { type: "string", description: "Salesforce Account ID" },
+      },
+      required: ["accountId"],
+    },
+  },
+  {
+    name: "CreateCaseFromCall",
+    description: "Create a new Salesforce Case with Status=New and Origin=Phone, linked to an Account and optionally a Contact. Use this to log a support case from an inbound call.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        subject:     { type: "string", description: "Case subject / title" },
+        description: { type: "string", description: "Detailed description of the issue" },
+        accountId:   { type: "string", description: "Salesforce Account ID" },
+        contactId:   { type: "string", description: "Salesforce Contact ID" },
+        priority:    { type: "string", enum: ["High", "Medium", "Low"], default: "Medium", description: "Case priority" },
+      },
+      required: ["subject"],
+    },
+  },
+];
+
+const TOOL_HANDLERS = {
+  query_records:        tool_query_records,
+  get_record_by_id:     tool_get_record_by_id,
+  search_records:       tool_search_records,
+  create_record:        tool_create_record,
+  update_record:        tool_update_record,
+  describe_object:      tool_describe_object,
+  ContactLookupByPhone: tool_contact_lookup_by_phone,
+  GetAccountSummary:    tool_get_account_summary,
+  GetOpenOpportunities: tool_get_open_opportunities,
+  CreateCaseFromCall:   tool_create_case_from_call,
+};
+
 function buildMcpServer() {
-  const server = new McpServer({ name: "salesforce-crm", version: "1.0.0" });
-
-  // ── A) Generic SObject Tools ──
-
-  server.tool("query_records",
-    "Execute a SOQL query against Salesforce and return matching records. Use for any data retrieval including contacts, accounts, opportunities, cases, and custom objects.",
-    {
-      soql:  z.string().describe("Full SOQL query, e.g. SELECT Id, Name FROM Account WHERE Industry = 'Finance'"),
-      limit: z.number().int().min(1).max(2000).optional().describe("Max records to return if LIMIT not already in query (default: no limit added)"),
-    },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_query_records(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
-    }
+  const server = new Server(
+    { name: "salesforce-crm", version: "1.0.0" },
+    { capabilities: { tools: {} } }
   );
 
-  server.tool("get_record_by_id",
-    "Fetch a single Salesforce record by its ID. Returns all or specified fields.",
-    {
-      sobject: z.string().describe("Salesforce object API name, e.g. Account, Contact, Case, Opportunity"),
-      id:      z.string().describe("Salesforce record ID, e.g. 001Kg00000DVlN4IAL"),
-      fields:  z.array(z.string()).optional().describe("List of field API names to return. If omitted, returns all fields."),
-    },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_get_record_by_id(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
-    }
-  );
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
 
-  server.tool("search_records",
-    "Full-text SOSL search across Salesforce objects. Use when you have a name or keyword but not a specific ID or field value.",
-    {
-      searchTerm: z.string().describe("Text to search for, e.g. 'Tony Stark' or 'Fantastic Finance'"),
-      sobjects:   z.array(z.string()).optional().describe("Objects to search in, e.g. ['Contact','Account']. Defaults to Contact + Account."),
-      fields:     z.array(z.string()).optional().describe("Fields to return per object. Defaults to Id, Name."),
-      limit:      z.number().int().min(1).max(200).optional().default(10).describe("Max results per object"),
-    },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_search_records(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
+    const handler = TOOL_HANDLERS[name];
+    if (!handler) {
+      return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
     }
-  );
-
-  server.tool("create_record",
-    "Create a new record in any Salesforce object. Returns the new record ID.",
-    {
-      sobject: z.string().describe("Salesforce object API name, e.g. Case, Contact, Opportunity"),
-      fields:  z.record(z.unknown()).describe("Field API names and values, e.g. {\"Subject\": \"Login issue\", \"Status\": \"New\"}"),
-    },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_create_record(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
+    try {
+      const result = await handler(args || {});
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (e) {
+      return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true };
     }
-  );
-
-  server.tool("update_record",
-    "Update an existing Salesforce record by ID.",
-    {
-      sobject: z.string().describe("Salesforce object API name"),
-      id:      z.string().describe("Salesforce record ID"),
-      fields:  z.record(z.unknown()).describe("Fields to update with new values"),
-    },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_update_record(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
-    }
-  );
-
-  server.tool("describe_object",
-    "Get field metadata (names, types, labels) for any Salesforce object. Use to discover available fields before querying.",
-    {
-      sobject: z.string().describe("Salesforce object API name, e.g. Contact, Account, Case"),
-    },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_describe_object(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
-    }
-  );
-
-  // ── B) Purpose-Built CRM Tools ──
-
-  server.tool("ContactLookupByPhone",
-    "Look up a CRM Contact and their Account by phone number (CLI). Returns contact details, account info, and all custom fields (insurance, KYC, prescription, etc.). Primary tool for caller screen-pop on inbound calls.",
-    { phoneNumber: z.string().describe("Caller phone number, e.g. +15144469113 or +441135550501") },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_contact_lookup_by_phone(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
-    }
-  );
-
-  server.tool("GetAccountSummary",
-    "Retrieve full account details including open opportunities (count, total pipeline value, list) and open cases for a given Salesforce Account ID.",
-    { accountId: z.string().describe("Salesforce Account ID, e.g. 001Kg00000DVlN4IAL") },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_get_account_summary(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
-    }
-  );
-
-  server.tool("GetOpenOpportunities",
-    "List all open (not closed) Opportunities for a Salesforce Account, with name, stage, amount, and close date.",
-    { accountId: z.string().describe("Salesforce Account ID") },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_get_open_opportunities(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
-    }
-  );
-
-  server.tool("CreateCaseFromCall",
-    "Create a new Salesforce Case with Status=New and Origin=Phone, linked to an Account and optionally a Contact. Use this to log a support case from an inbound call.",
-    {
-      subject:     z.string().describe("Case subject / title"),
-      description: z.string().optional().describe("Detailed description of the issue"),
-      accountId:   z.string().optional().describe("Salesforce Account ID"),
-      contactId:   z.string().optional().describe("Salesforce Contact ID"),
-      priority:    z.enum(["High", "Medium", "Low"]).optional().default("Medium"),
-    },
-    async (args) => {
-      try { return { content: [{ type: "text", text: JSON.stringify(await tool_create_case_from_call(args), null, 2) }] }; }
-      catch (e) { return { content: [{ type: "text", text: `Error: ${e.message}` }], isError: true }; }
-    }
-  );
+  });
 
   return server;
 }
