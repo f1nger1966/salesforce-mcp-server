@@ -29,8 +29,10 @@
  */
 
 import express from "express";
+import { randomUUID } from "crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
 
 // ── Salesforce Auth ──────────────────────────────────────────────────────────
@@ -420,7 +422,7 @@ function buildMcpServer() {
   return server;
 }
 
-// ── Express + SSE ────────────────────────────────────────────────────────────
+// ── Express + Transports ─────────────────────────────────────────────────────
 
 const app     = express();
 const PORT    = parseInt(process.env.PORT || "3001", 10);
@@ -436,31 +438,75 @@ function checkAuth(req, res, next) {
   next();
 }
 
-const transports = new Map();
+// ── Streamable HTTP transport (AI Studio / modern MCP clients) ──
+// Single endpoint: POST /mcp  (also handles GET for SSE streaming)
+const httpSessions = new Map(); // sessionId → { transport, server }
+
+app.all("/mcp", checkAuth, express.json(), async (req, res) => {
+  try {
+    const sessionId = req.headers["mcp-session-id"];
+
+    if (req.method === "POST" && !sessionId) {
+      // New session — stateful mode
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: (id) => {
+          httpSessions.set(id, { transport, server: mcpServerInstance });
+          console.log(`[HTTP] Session created: ${id}`);
+        },
+      });
+      const mcpServerInstance = buildMcpServer();
+      transport.onclose = () => {
+        const id = transport.sessionId;
+        if (id) { httpSessions.delete(id); console.log(`[HTTP] Session closed: ${id}`); }
+      };
+      await mcpServerInstance.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+      return;
+    }
+
+    if (sessionId && httpSessions.has(sessionId)) {
+      const { transport } = httpSessions.get(sessionId);
+      await transport.handleRequest(req, res, req.body);
+      return;
+    }
+
+    // No matching session
+    res.status(400).json({ error: "Invalid or missing session ID" });
+  } catch (e) {
+    console.error("[HTTP] Error:", e.message);
+    if (!res.headersSent) res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Legacy SSE transport (older MCP clients) ──
+const sseTransports = new Map();
 
 app.get("/sse", checkAuth, async (req, res) => {
   console.log(`[SSE] Connect from ${req.ip}`);
   const transport = new SSEServerTransport("/messages", res);
   const server = buildMcpServer();
-  transports.set(transport.sessionId, transport);
+  sseTransports.set(transport.sessionId, transport);
   res.on("close", () => {
     console.log(`[SSE] Disconnect: ${transport.sessionId}`);
-    transports.delete(transport.sessionId);
+    sseTransports.delete(transport.sessionId);
   });
   await server.connect(transport);
 });
 
 app.post("/messages", checkAuth, express.json(), async (req, res) => {
-  const transport = transports.get(req.query.sessionId);
+  const transport = sseTransports.get(req.query.sessionId);
   if (!transport) { res.status(404).json({ error: "Session not found" }); return; }
   await transport.handlePostMessage(req, res, req.body);
 });
 
+// ── Health ──
 app.get("/health", (_req, res) => res.json({
   status: "ok",
   service: "salesforce-mcp-server",
   sfConnected: !!sfSession,
   sfInstance: sfSession?.instance || null,
+  transports: ["streamable-http (POST /mcp)", "sse (GET /sse)"],
   tools: {
     generic: ["query_records", "get_record_by_id", "search_records", "create_record", "update_record", "describe_object"],
     crm:     ["ContactLookupByPhone", "GetAccountSummary", "GetOpenOpportunities", "CreateCaseFromCall"],
@@ -470,9 +516,10 @@ app.get("/health", (_req, res) => res.json({
 
 app.listen(PORT, async () => {
   console.log(`[MCP] Salesforce MCP Server on http://localhost:${PORT}`);
-  console.log(`[MCP] SSE endpoint : http://localhost:${PORT}/sse`);
-  console.log(`[MCP] Health check : http://localhost:${PORT}/health`);
-  console.log(`[MCP] Tools        : 6 generic SObject + 4 CRM-specific`);
+  console.log(`[MCP] Streamable HTTP : http://localhost:${PORT}/mcp  ← AI Studio uses this`);
+  console.log(`[MCP] SSE (legacy)    : http://localhost:${PORT}/sse`);
+  console.log(`[MCP] Health check    : http://localhost:${PORT}/health`);
+  console.log(`[MCP] Tools           : 6 generic SObject + 4 CRM-specific`);
   try { await sfLogin(); }
   catch (e) { console.error(`[SF] Pre-auth failed: ${e.message}`); }
 });
