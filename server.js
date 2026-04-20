@@ -186,6 +186,7 @@ async function tool_contact_lookup_by_phone({ phoneNumber }) {
   const phone = phoneNumber.trim();
   const { records } = await sfQuery(`
     SELECT Id, FirstName, LastName, Title, Phone, MobilePhone, HomePhone, Email,
+           MailingStreet, MailingCity, MailingState, MailingPostalCode, MailingCountry,
            Insurance_Member_ID__c, Insurance_Plan__c, Last_Appointment_Date__c,
            KYC_Verified__c, Prescription_Reference__c, Last_Eye_Exam_Date__c, Preferred_Store__c,
            Account.Id, Account.Name, Account.Phone, Account.Website,
@@ -220,6 +221,11 @@ async function tool_contact_lookup_by_phone({ phoneNumber }) {
     accountId: acc.Id || null, accountName: acc.Name || null,
     accountIndustry: acc.Industry || null, accountPhone: acc.Phone || null,
     accountAnnualRevenue: acc.AnnualRevenue || null,
+    mailingStreet: c.MailingStreet || null,
+    mailingCity: c.MailingCity || null,
+    mailingState: c.MailingState || null,
+    mailingPostalCode: c.MailingPostalCode || null,
+    mailingCountry: c.MailingCountry || null,
     insuranceMemberId: c.Insurance_Member_ID__c || null,
     insurancePlan: c.Insurance_Plan__c || null,
     lastAppointmentDate: c.Last_Appointment_Date__c || null,
