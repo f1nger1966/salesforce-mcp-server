@@ -104,32 +104,32 @@ Organised under `DEMO_STORES` in `server.js`. Add new demo customer brands as ad
 
 | Tool | Description | Key Parameters | Returns |
 |---|---|---|---|
-| `findGallsStore` | Find nearest Galls retail stores by caller zip code, city/state, or address. Uses Haversine formula for distance. | `location` (zip/city/address), `limit` (default 3, max 5) | Up to 3 nearest stores with name, full address, phone, distance in miles |
+| `findGallsStore` | Find nearest Galls retail stores by caller zip code, city/state, or address. Uses Haversine formula for distance. | `location` (zip/city/address), `limit` (default 3, max 5) | Up to 3 nearest stores with name, full address, phone, **hours**, distance in miles |
 
 ### Galls Store Data (20 locations, 17 states)
 
-| # | Store | Address | Phone |
-|---|---|---|---|
-| 1 | Galls Lexington | 1300 Russell Cave Rd, Lexington, KY 40505 | (859) 787-0420 |
-| 2 | Galls Los Angeles | 2543 W 6th St, Los Angeles, CA 90057 | (213) 351-9632 |
-| 3 | Galls San Francisco | 2200 Jerrold Ave Unit J, San Francisco, CA 94124 | (415) 647-7077 |
-| 4 | Galls Riverside | 1865 Iowa Ave, Riverside, CA 92507 | (951) 781-6366 |
-| 5 | Galls Albany | 230 Central Ave, Albany, NY 12206 | (518) 434-1376 |
-| 6 | Galls Richmond | 2124 Tomlynn St, Richmond, VA 23230 | (804) 355-4455 |
-| 7 | Galls Houston | 1314 Houston Ave, Houston, TX 77007 | (713) 222-0765 |
-| 8 | Galls Des Moines | 5801 Thornton Ave, Des Moines, IA 50321 | (515) 283-1985 |
-| 9 | Galls Minneapolis | 2220 Lyndale Ave S, Minneapolis, MN 55405 | (612) 377-0011 |
-| 10 | Galls Columbus | 3889 Business Park Dr, Columbus, OH 43204 | (614) 351-1566 |
-| 11 | Galls Oak Creek | 500 E Oak St, Oak Creek, WI 53154 | (414) 762-7300 |
-| 12 | Galls Grand Prairie | 2636 W Pioneer Pkwy, Grand Prairie, TX 75051 | (972) 641-4400 |
-| 13 | Galls Atlanta | 1794 Cheshire Bridge Rd NE, Atlanta, GA 30324 | (404) 873-0381 |
-| 14 | Galls Orlando | 2516 N Orange Blossom Trail, Orlando, FL 32804 | (407) 425-0755 |
-| 15 | Galls Phoenix | 2201 E University Dr, Phoenix, AZ 85034 | (602) 275-8500 |
-| 16 | Galls Denver | 1391 N Federal Blvd, Denver, CO 80204 | (303) 893-2211 |
-| 17 | Galls Kansas City | 10328 Metcalf Ave, Overland Park, KS 66212 | (913) 381-3200 |
-| 18 | Galls Nashville | 2608 Nolensville Pike, Nashville, TN 37211 | (615) 832-0557 |
-| 19 | Galls Charlotte | 4730 Old Pineville Rd, Charlotte, NC 28217 | (704) 523-0655 |
-| 20 | Galls Chicago | 4647 W 47th St, Chicago, IL 60632 | (773) 254-1100 |
+| # | Store | Address | Phone | Hours |
+|---|---|---|---|---|
+| 1 | Galls Lexington | 1300 Russell Cave Rd, Lexington, KY 40505 | (859) 787-0420 | Mon-Fri 9am-6pm, Sat 9am-1:30pm, Sun Closed |
+| 2 | Galls Los Angeles | 2543 W 6th St, Los Angeles, CA 90057 | (213) 351-9632 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 3 | Galls San Francisco | 2200 Jerrold Ave Unit J, San Francisco, CA 94124 | (415) 647-7077 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 4 | Galls Riverside | 1865 Iowa Ave, Riverside, CA 92507 | (951) 781-6366 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 5 | Galls Albany | 230 Central Ave, Albany, NY 12206 | (518) 434-1376 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 6 | Galls Richmond | 2124 Tomlynn St, Richmond, VA 23230 | (804) 355-4455 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 7 | Galls Houston | 1314 Houston Ave, Houston, TX 77007 | (713) 222-0765 | Mon-Fri 7am-4pm, Sat-Sun Closed |
+| 8 | Galls Des Moines | 5801 Thornton Ave, Des Moines, IA 50321 | (515) 283-1985 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 9 | Galls Minneapolis | 2220 Lyndale Ave S, Minneapolis, MN 55405 | (612) 377-0011 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 10 | Galls Columbus | 3889 Business Park Dr, Columbus, OH 43204 | (614) 351-1566 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 11 | Galls Oak Creek | 500 E Oak St, Oak Creek, WI 53154 | (414) 762-7300 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 12 | Galls Grand Prairie | 2636 W Pioneer Pkwy, Grand Prairie, TX 75051 | (972) 641-4400 | Mon-Fri 8:30am-5pm, Sat-Sun Closed |
+| 13 | Galls Atlanta | 1794 Cheshire Bridge Rd NE, Atlanta, GA 30324 | (404) 873-0381 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 14 | Galls Orlando | 2516 N Orange Blossom Trail, Orlando, FL 32804 | (407) 425-0755 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 15 | Galls Phoenix | 2201 E University Dr, Phoenix, AZ 85034 | (602) 275-8500 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 16 | Galls Denver | 1391 N Federal Blvd, Denver, CO 80204 | (303) 893-2211 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 17 | Galls Kansas City | 10328 Metcalf Ave, Overland Park, KS 66212 | (913) 381-3200 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 18 | Galls Nashville | 2608 Nolensville Pike, Nashville, TN 37211 | (615) 832-0557 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 19 | Galls Charlotte | 4730 Old Pineville Rd, Charlotte, NC 28217 | (704) 523-0655 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+| 20 | Galls Chicago | 4647 W 47th St, Chicago, IL 60632 | (773) 254-1100 | Mon-Fri 9am-5pm, Sat-Sun Closed |
 
 ### Adding a new demo customer's stores
 

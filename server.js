@@ -298,26 +298,26 @@ async function tool_create_case_from_call({ subject, description, accountId, con
 
 const DEMO_STORES = {
   galls: [
-    { name: "Galls Lexington",    address: "1300 Russell Cave Rd",             city: "Lexington",    state: "KY", zip: "40505", phone: "(859) 787-0420", lat: 38.0712, lon: -84.4584 },
-    { name: "Galls Los Angeles",  address: "2543 W 6th St",                    city: "Los Angeles",  state: "CA", zip: "90057", phone: "(213) 351-9632", lat: 34.0574, lon: -118.2785 },
-    { name: "Galls San Francisco",address: "2200 Jerrold Ave, Unit J",         city: "San Francisco",state: "CA", zip: "94124", phone: "(415) 647-7077", lat: 37.7393, lon: -122.3938 },
-    { name: "Galls Riverside",    address: "1865 Iowa Ave",                    city: "Riverside",    state: "CA", zip: "92507", phone: "(951) 781-6366", lat: 33.9806, lon: -117.3755 },
-    { name: "Galls Albany",       address: "230 Central Ave",                  city: "Albany",       state: "NY", zip: "12206", phone: "(518) 434-1376", lat: 42.6560, lon: -73.7695 },
-    { name: "Galls Richmond",     address: "2124 Tomlynn St",                  city: "Richmond",     state: "VA", zip: "23230", phone: "(804) 355-4455", lat: 37.5726, lon: -77.4769 },
-    { name: "Galls Houston",      address: "1314 Houston Ave",                 city: "Houston",      state: "TX", zip: "77007", phone: "(713) 222-0765", lat: 29.7725, lon: -95.3878 },
-    { name: "Galls Des Moines",   address: "5801 Thornton Ave",                city: "Des Moines",   state: "IA", zip: "50321", phone: "(515) 283-1985", lat: 41.5516, lon: -93.6535 },
-    { name: "Galls Minneapolis",  address: "2220 Lyndale Ave S",               city: "Minneapolis",  state: "MN", zip: "55405", phone: "(612) 377-0011", lat: 44.9582, lon: -93.2920 },
-    { name: "Galls Columbus",     address: "3889 Business Park Dr",            city: "Columbus",     state: "OH", zip: "43204", phone: "(614) 351-1566", lat: 39.9658, lon: -83.0878 },
-    { name: "Galls Oak Creek",    address: "500 E Oak St",                     city: "Oak Creek",    state: "WI", zip: "53154", phone: "(414) 762-7300", lat: 42.8848, lon: -87.8594 },
-    { name: "Galls Grand Prairie",address: "2636 W Pioneer Pkwy",              city: "Grand Prairie",state: "TX", zip: "75051", phone: "(972) 641-4400", lat: 32.7459, lon: -97.0281 },
-    { name: "Galls Atlanta",      address: "1794 Cheshire Bridge Rd NE",       city: "Atlanta",      state: "GA", zip: "30324", phone: "(404) 873-0381", lat: 33.8134, lon: -84.3574 },
-    { name: "Galls Orlando",      address: "2516 N Orange Blossom Trail",      city: "Orlando",      state: "FL", zip: "32804", phone: "(407) 425-0755", lat: 28.5611, lon: -81.4012 },
-    { name: "Galls Phoenix",      address: "2201 E University Dr",             city: "Phoenix",      state: "AZ", zip: "85034", phone: "(602) 275-8500", lat: 33.4235, lon: -111.9974 },
-    { name: "Galls Denver",       address: "1391 N Federal Blvd",              city: "Denver",       state: "CO", zip: "80204", phone: "(303) 893-2211", lat: 39.7426, lon: -105.0185 },
-    { name: "Galls Kansas City",  address: "10328 Metcalf Ave",                city: "Overland Park",state: "KS", zip: "66212", phone: "(913) 381-3200", lat: 38.9458, lon: -94.6687 },
-    { name: "Galls Nashville",    address: "2608 Nolensville Pike",            city: "Nashville",    state: "TN", zip: "37211", phone: "(615) 832-0557", lat: 36.0904, lon: -86.7529 },
-    { name: "Galls Charlotte",    address: "4730 Old Pineville Rd",            city: "Charlotte",    state: "NC", zip: "28217", phone: "(704) 523-0655", lat: 35.1688, lon: -80.8854 },
-    { name: "Galls Chicago",      address: "4647 W 47th St",                   city: "Chicago",      state: "IL", zip: "60632", phone: "(773) 254-1100", lat: 41.8081, lon: -87.7406 },
+    { name: "Galls Lexington",    address: "1300 Russell Cave Rd",             city: "Lexington",    state: "KY", zip: "40505", phone: "(859) 787-0420", lat: 38.0712, lon: -84.4584,  hours: "Mon-Fri 9am-6pm, Sat 9am-1:30pm, Sun Closed" },
+    { name: "Galls Los Angeles",  address: "2543 W 6th St",                    city: "Los Angeles",  state: "CA", zip: "90057", phone: "(213) 351-9632", lat: 34.0574, lon: -118.2785, hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls San Francisco",address: "2200 Jerrold Ave, Unit J",         city: "San Francisco",state: "CA", zip: "94124", phone: "(415) 647-7077", lat: 37.7393, lon: -122.3938, hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Riverside",    address: "1865 Iowa Ave",                    city: "Riverside",    state: "CA", zip: "92507", phone: "(951) 781-6366", lat: 33.9806, lon: -117.3755, hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Albany",       address: "230 Central Ave",                  city: "Albany",       state: "NY", zip: "12206", phone: "(518) 434-1376", lat: 42.6560, lon: -73.7695,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Richmond",     address: "2124 Tomlynn St",                  city: "Richmond",     state: "VA", zip: "23230", phone: "(804) 355-4455", lat: 37.5726, lon: -77.4769,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Houston",      address: "1314 Houston Ave",                 city: "Houston",      state: "TX", zip: "77007", phone: "(713) 222-0765", lat: 29.7725, lon: -95.3878,  hours: "Mon-Fri 7am-4pm, Sat-Sun Closed" },
+    { name: "Galls Des Moines",   address: "5801 Thornton Ave",                city: "Des Moines",   state: "IA", zip: "50321", phone: "(515) 283-1985", lat: 41.5516, lon: -93.6535,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Minneapolis",  address: "2220 Lyndale Ave S",               city: "Minneapolis",  state: "MN", zip: "55405", phone: "(612) 377-0011", lat: 44.9582, lon: -93.2920,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Columbus",     address: "3889 Business Park Dr",            city: "Columbus",     state: "OH", zip: "43204", phone: "(614) 351-1566", lat: 39.9658, lon: -83.0878,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Oak Creek",    address: "500 E Oak St",                     city: "Oak Creek",    state: "WI", zip: "53154", phone: "(414) 762-7300", lat: 42.8848, lon: -87.8594,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Grand Prairie",address: "2636 W Pioneer Pkwy",              city: "Grand Prairie",state: "TX", zip: "75051", phone: "(972) 641-4400", lat: 32.7459, lon: -97.0281,  hours: "Mon-Fri 8:30am-5pm, Sat-Sun Closed" },
+    { name: "Galls Atlanta",      address: "1794 Cheshire Bridge Rd NE",       city: "Atlanta",      state: "GA", zip: "30324", phone: "(404) 873-0381", lat: 33.8134, lon: -84.3574,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Orlando",      address: "2516 N Orange Blossom Trail",      city: "Orlando",      state: "FL", zip: "32804", phone: "(407) 425-0755", lat: 28.5611, lon: -81.4012,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Phoenix",      address: "2201 E University Dr",             city: "Phoenix",      state: "AZ", zip: "85034", phone: "(602) 275-8500", lat: 33.4235, lon: -111.9974, hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Denver",       address: "1391 N Federal Blvd",              city: "Denver",       state: "CO", zip: "80204", phone: "(303) 893-2211", lat: 39.7426, lon: -105.0185, hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Kansas City",  address: "10328 Metcalf Ave",                city: "Overland Park",state: "KS", zip: "66212", phone: "(913) 381-3200", lat: 38.9458, lon: -94.6687,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Nashville",    address: "2608 Nolensville Pike",            city: "Nashville",    state: "TN", zip: "37211", phone: "(615) 832-0557", lat: 36.0904, lon: -86.7529,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Charlotte",    address: "4730 Old Pineville Rd",            city: "Charlotte",    state: "NC", zip: "28217", phone: "(704) 523-0655", lat: 35.1688, lon: -80.8854,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
+    { name: "Galls Chicago",      address: "4647 W 47th St",                   city: "Chicago",      state: "IL", zip: "60632", phone: "(773) 254-1100", lat: 41.8081, lon: -87.7406,  hours: "Mon-Fri 9am-5pm, Sat-Sun Closed" },
   ],
 };
 
@@ -359,6 +359,7 @@ async function tool_find_galls_store({ location, limit }) {
           name: s.name,
           address: `${s.address}, ${s.city}, ${s.state} ${s.zip}`,
           phone: s.phone,
+          hours: s.hours,
           distanceMiles: null,
         })),
       };
@@ -379,6 +380,7 @@ async function tool_find_galls_store({ location, limit }) {
       name: s.name,
       address: `${s.address}, ${s.city}, ${s.state} ${s.zip}`,
       phone: s.phone,
+      hours: s.hours,
       distanceMiles: s.distanceMiles,
     })),
   };
@@ -514,7 +516,7 @@ const TOOLS = [
   // ── Galls Store Locator ──
   {
     name: "findGallsStore",
-    description: "Find the nearest Galls retail store locations given a zip code, city/state, or address. Returns up to 3 closest stores with name, address, phone, and distance in miles. Use this when a Galls customer asks about the nearest store location.",
+    description: "Find the nearest Galls retail store locations given a zip code, city/state, or address. Returns up to 3 closest stores with name, address, phone, store hours, and distance in miles. Use this when a Galls customer asks about the nearest store location or store hours.",
     inputSchema: {
       type: "object",
       properties: {
