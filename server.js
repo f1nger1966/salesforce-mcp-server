@@ -386,6 +386,42 @@ async function tool_find_galls_store({ location, limit }) {
   };
 }
 
+async function tool_get_uniform_inventory({ category, sku }) {
+  let soql = "SELECT Id, Name, ProductCode, Family, Description FROM Product2 WHERE IsActive = true";
+  if (sku)      soql += ` AND ProductCode = '${sku}'`;
+  if (category) soql += ` AND Family = '${category}'`;
+  soql += " ORDER BY Family, Name LIMIT 50";
+
+  const resp = await sfFetch(`/services/data/v62.0/query?q=${encodeURIComponent(soql)}`);
+  if (!resp.ok) throw new Error(`Inventory query failed (${resp.status}): ${await resp.text()}`);
+  const data = await resp.json();
+
+  const products = (data.records || []).map(p => {
+    const inv = {};
+    if (p.Description?.startsWith("INVENTORY:")) {
+      try { Object.assign(inv, JSON.parse(p.Description.slice(10))); } catch (_) {}
+    }
+    const storeStock = Object.entries(inv)
+      .filter(([k]) => k !== "online")
+      .map(([location, qty]) => ({ location, qty }))
+      .sort((a, b) => b.qty - a.qty);
+    return {
+      name: p.Name,
+      sku: p.ProductCode,
+      category: p.Family,
+      onlineStock: inv.online ?? null,
+      storeStock,
+      totalStoreStock: storeStock.reduce((s, x) => s + x.qty, 0),
+    };
+  });
+
+  return {
+    count: products.length,
+    category: category || "all",
+    products,
+  };
+}
+
 // ── MCP Server Builder ───────────────────────────────────────────────────────
 
 const TOOLS = [
@@ -513,6 +549,19 @@ const TOOLS = [
     },
   },
 
+  // ── Galls Uniform Inventory ──
+  {
+    name: "getUniformInventory",
+    description: "Look up Galls uniform and gear inventory showing stock available online and at each store location. Use when a caller asks about product availability, what's in stock, or whether an item is available at a specific store. Can filter by product category (Pants, Shirts, Jackets, Footwear, Duty Gear) or by SKU.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        category: { type: "string", enum: ["Pants", "Shirts", "Jackets", "Footwear", "Duty Gear"], description: "Filter by product category. Omit to return all categories." },
+        sku:      { type: "string", description: "Filter by specific product SKU/code, e.g. GL-TFP-M" },
+      },
+    },
+  },
+
   // ── Galls Store Locator ──
   {
     name: "findGallsStore",
@@ -540,6 +589,7 @@ const TOOL_HANDLERS = {
   GetOpenOpportunities: tool_get_open_opportunities,
   CreateCaseFromCall:   tool_create_case_from_call,
   findGallsStore:       tool_find_galls_store,
+  getUniformInventory:  tool_get_uniform_inventory,
 };
 
 function buildMcpServer() {
@@ -655,7 +705,7 @@ app.get("/health", (_req, res) => res.json({
   tools: {
     generic:  ["query_records", "get_record_by_id", "search_records", "create_record", "update_record", "describe_object"],
     crm:      ["ContactLookupByPhone", "GetAccountSummary", "GetOpenOpportunities", "CreateCaseFromCall"],
-    stores:   { galls: ["findGallsStore"] },
+    stores:   { galls: ["findGallsStore", "getUniformInventory"] },
   },
   timestamp: new Date().toISOString(),
 }));
