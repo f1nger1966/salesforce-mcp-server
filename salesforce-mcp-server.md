@@ -1,11 +1,12 @@
 # Salesforce MCP Server
 
 Custom MCP server for 8x8 AI Studio ↔ Salesforce CRM integration.
-Exposes **10 tools** via HTTP + SSE transport.
+Exposes **11 tools** via HTTP + SSE transport.
 
 **Org:** `https://d6a0000002fgdua2-dev-ed.my.salesforce.com`
-**Auth to server:** Bearer token (`MCP_API_KEY` env var)
+**Auth to server:** Bearer token (`MCP_API_KEY` env var — value `8x8-sf-mcp-2026`)
 **Auth to Salesforce:** SOAP Partner login (auto-refreshes on session expiry)
+**Live endpoint:** `https://salesforce-mcp-server-xftl.onrender.com/mcp`
 
 ---
 
@@ -13,8 +14,9 @@ Exposes **10 tools** via HTTP + SSE transport.
 
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `/sse` | GET | MCP SSE connection (AI Studio connects here) |
-| `/messages?sessionId=<id>` | POST | MCP message channel |
+| `/mcp` | POST | MCP Streamable HTTP — **primary, used by AI Studio** |
+| `/sse` | GET | MCP SSE (legacy clients only) |
+| `/messages?sessionId=<id>` | POST | Legacy SSE message channel |
 | `/health` | GET | Status check — no auth required |
 
 ---
@@ -96,6 +98,52 @@ Returns:
 
 ---
 
+## Tool Set C — Demo Store Locator
+
+Organised under `DEMO_STORES` in `server.js`. Add new demo customer brands as additional keys (e.g. `DEMO_STORES.acme`). Each entry stores lat/lon so distance is calculated without additional API calls to geocoding services — only the **caller's** location is geocoded at runtime via Nominatim (OpenStreetMap, no API key required).
+
+| Tool | Description | Key Parameters | Returns |
+|---|---|---|---|
+| `findGallsStore` | Find nearest Galls retail stores by caller zip code, city/state, or address. Uses Haversine formula for distance. | `location` (zip/city/address), `limit` (default 3, max 5) | Up to 3 nearest stores with name, full address, phone, distance in miles |
+
+### Galls Store Data (20 locations, 17 states)
+
+| # | Store | Address | Phone |
+|---|---|---|---|
+| 1 | Galls Lexington | 1300 Russell Cave Rd, Lexington, KY 40505 | (859) 787-0420 |
+| 2 | Galls Los Angeles | 2543 W 6th St, Los Angeles, CA 90057 | (213) 351-9632 |
+| 3 | Galls San Francisco | 2200 Jerrold Ave Unit J, San Francisco, CA 94124 | (415) 647-7077 |
+| 4 | Galls Riverside | 1865 Iowa Ave, Riverside, CA 92507 | (951) 781-6366 |
+| 5 | Galls Albany | 230 Central Ave, Albany, NY 12206 | (518) 434-1376 |
+| 6 | Galls Richmond | 2124 Tomlynn St, Richmond, VA 23230 | (804) 355-4455 |
+| 7 | Galls Houston | 1314 Houston Ave, Houston, TX 77007 | (713) 222-0765 |
+| 8 | Galls Des Moines | 5801 Thornton Ave, Des Moines, IA 50321 | (515) 283-1985 |
+| 9 | Galls Minneapolis | 2220 Lyndale Ave S, Minneapolis, MN 55405 | (612) 377-0011 |
+| 10 | Galls Columbus | 3889 Business Park Dr, Columbus, OH 43204 | (614) 351-1566 |
+| 11 | Galls Oak Creek | 500 E Oak St, Oak Creek, WI 53154 | (414) 762-7300 |
+| 12 | Galls Grand Prairie | 2636 W Pioneer Pkwy, Grand Prairie, TX 75051 | (972) 641-4400 |
+| 13 | Galls Atlanta | 1794 Cheshire Bridge Rd NE, Atlanta, GA 30324 | (404) 873-0381 |
+| 14 | Galls Orlando | 2516 N Orange Blossom Trail, Orlando, FL 32804 | (407) 425-0755 |
+| 15 | Galls Phoenix | 2201 E University Dr, Phoenix, AZ 85034 | (602) 275-8500 |
+| 16 | Galls Denver | 1391 N Federal Blvd, Denver, CO 80204 | (303) 893-2211 |
+| 17 | Galls Kansas City | 10328 Metcalf Ave, Overland Park, KS 66212 | (913) 381-3200 |
+| 18 | Galls Nashville | 2608 Nolensville Pike, Nashville, TN 37211 | (615) 832-0557 |
+| 19 | Galls Charlotte | 4730 Old Pineville Rd, Charlotte, NC 28217 | (704) 523-0655 |
+| 20 | Galls Chicago | 4647 W 47th St, Chicago, IL 60632 | (773) 254-1100 |
+
+### Adding a new demo customer's stores
+
+In `server.js`, add a new key under `DEMO_STORES` and a corresponding tool + handler:
+
+```js
+const DEMO_STORES = {
+  galls: [ /* existing */ ],
+  acme:  [ { name: "Acme NYC", address: "...", city: "New York", state: "NY", zip: "10001", phone: "...", lat: 40.7128, lon: -74.0060 } ],
+};
+```
+
+---
+
 ## Test Phone Numbers
 
 | Phone | Contact | Account |
@@ -132,12 +180,55 @@ After adding, click **Sync Tools** — all 10 tools should appear.
 
 ---
 
-## Deployment (Render.com)
+## Deployment — Render.com (current)
 
 Free tier web service. Sleeps after 15 min inactivity, wakes on first call (~30s cold start).
 
-Build command: `npm install`
-Start command: `node server.js`
-Node version: 22
+| Setting | Value |
+|---|---|
+| GitHub repo | `https://github.com/f1nger1966/salesforce-mcp-server` |
+| Branch | `main` |
+| Build command | `npm install` |
+| Start command | `node server.js` |
+| Node version | 22 |
+| Auto-deploy | On commit |
 
-Set all env vars under Environment in the Render dashboard.
+Set all env vars under **Environment** in the Render dashboard.
+
+---
+
+## Deployment — Vibe8 via Rancher (planned)
+
+Files: `Dockerfile` and `platform.yaml` in repo root — ready but not yet deployed.
+
+### Build & push the Docker image
+
+```bash
+# Build
+docker build -t salesforce-mcp-server:latest .
+
+# Tag for Rancher registry
+docker tag salesforce-mcp-server:latest <RANCHER_REGISTRY>/8x8-demos/salesforce-mcp-server:latest
+
+# Push
+docker push <RANCHER_REGISTRY>/8x8-demos/salesforce-mcp-server:latest
+```
+
+Replace `<RANCHER_REGISTRY>` with your Rancher registry hostname before running.
+
+### platform.yaml secrets to configure in Vibe8
+
+| Secret name | Value |
+|---|---|
+| `SF_USERNAME` | `alton2020@8x8.com` |
+| `SF_PASSWORD` | Salesforce password |
+| `SF_SECURITY_TOKEN` | Salesforce security token |
+| `MCP_API_KEY` | `8x8-sf-mcp-2026` |
+
+### After deploying to Vibe8
+
+Update the AI Studio MCP Connector URL from:
+`https://salesforce-mcp-server-xftl.onrender.com/mcp`
+to the Vibe8-assigned hostname — bearer token remains the same.
+
+**Advantage over Render free tier:** No cold-start spin-down; always-on service.

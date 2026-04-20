@@ -1,0 +1,36 @@
+# Vibe8 Platform Configuration — Salesforce MCP Server
+# Deploy via: vibe8 deploy
+#
+# Rancher image build & push (run locally before deploying):
+#   docker build -t salesforce-mcp-server:latest .
+#   docker tag salesforce-mcp-server:latest <RANCHER_REGISTRY>/8x8-demos/salesforce-mcp-server:latest
+#   docker push <RANCHER_REGISTRY>/8x8-demos/salesforce-mcp-server:latest
+#
+# Replace <RANCHER_REGISTRY> with your Rancher registry hostname, e.g.:
+#   harbor.vibe8.io   or   registry.vibe8platform.io
+
+service:
+  name: salesforce-mcp-server
+  image: <RANCHER_REGISTRY>/8x8-demos/salesforce-mcp-server:latest
+  port: 3001
+
+  healthCheck:
+    path: /health
+    intervalSeconds: 30
+    timeoutSeconds: 5
+
+  env:
+    - name: PORT
+      value: "3001"
+    - name: SF_USERNAME
+      secret: SF_USERNAME
+    - name: SF_PASSWORD
+      secret: SF_PASSWORD
+    - name: SF_SECURITY_TOKEN
+      secret: SF_SECURITY_TOKEN
+    - name: MCP_API_KEY
+      secret: MCP_API_KEY
+
+  resources:
+    memory: 256Mi
+    cpu: 0.25
