@@ -1,7 +1,7 @@
 # Salesforce MCP Server
 
 Custom MCP server for 8x8 AI Studio ↔ Salesforce CRM integration.
-Exposes **11 tools** via HTTP + SSE transport.
+Exposes **12 tools** via HTTP + SSE transport.
 
 **Org:** `https://d6a0000002fgdua2-dev-ed.my.salesforce.com`
 **Auth to server:** Bearer token (`MCP_API_KEY` env var — value `8x8-sf-mcp-2026`)
@@ -130,6 +130,43 @@ Organised under `DEMO_STORES` in `server.js`. Add new demo customer brands as ad
 | 18 | Galls Nashville | 2608 Nolensville Pike, Nashville, TN 37211 | (615) 832-0557 | Mon-Fri 9am-5pm, Sat-Sun Closed |
 | 19 | Galls Charlotte | 4730 Old Pineville Rd, Charlotte, NC 28217 | (704) 523-0655 | Mon-Fri 9am-5pm, Sat-Sun Closed |
 | 20 | Galls Chicago | 4647 W 47th St, Chicago, IL 60632 | (773) 254-1100 | Mon-Fri 9am-5pm, Sat-Sun Closed |
+
+---
+
+## Tool Set D — Uniform Inventory (1 tool, added 2026-04-20)
+
+Inventory is stored as JSON in the `Description` field of Salesforce `Product2` records using the prefix `INVENTORY:`. The tool queries live Salesforce data — no hardcoded values in server code.
+
+| Tool | Description | Key Parameters | Returns |
+|---|---|---|---|
+| `getUniformInventory` | Look up uniform/gear stock levels showing online qty and per-store qty for each location. | `category` (optional: Pants/Shirts/Jackets/Footwear/Duty Gear), `sku` (optional) | Products with `onlineStock`, `storeStock[]` per location, `totalStoreStock` |
+
+### Products in Salesforce (Product2) — created 2026-04-20
+
+| SKU | Product Name | Category | Online | Lexington KY | Key Store Stock |
+|---|---|---|---|---|---|
+| GL-TFP-M | Galls Pro Men's Tac Force Tactical Pants | Pants | 38 | **0** | Charlotte 14, Houston 11, Chicago 9, Atlanta 8 |
+| GL-BDU-6P | Galls 6-Pocket BDU Ripstop Pants | Pants | 52 | 16 | Houston 14, LA 12, Chicago 9 |
+| GL-CA-LS | Galls Men's Class A Long Sleeve Security Shirt | Shirts | 65 | 20 | LA 18, Chicago 14, Atlanta 11 |
+| GL-CB-SS | Galls Men's Class B Short Sleeve Security Shirt | Shirts | 78 | 24 | Houston 16, Minneapolis 12, Charlotte 10 |
+| LP-WB-SEC | LawPro Security Windbreaker | Jackets | 29 | 8 | Chicago 11, Orlando 9, Phoenix 7 |
+| GL-SSH-JKT | Galls Security Softshell Jacket | Jackets | 31 | 7 | Albany 9, Des Moines 8, SF 6 |
+| MR-MOAB2-TRB | Merrell MOAB 2 Tactical Response Boot | Footwear | 43 | 11 | LA 15, Nashville 10, Columbus 8 |
+| BT-8TSB-M | Bates Men's 8-Inch Tactical Sport Boot | Footwear | 35 | 9 | Chicago 13, Houston 8, Richmond 7 |
+| BL-GDB-5R | Boston Leather Garrison Duty Belt | Duty Gear | 58 | 15 | Charlotte 12, LA 11, Denver 9 |
+| SF-ALS-OT | Safariland ALS Open Top Duty Holster | Duty Gear | 44 | 13 | Columbus 9, Richmond 8, Minneapolis 7 |
+
+**Tac Force Pants demo note (for Catie Garvis / Galls scenario):** Lexington has zero stock — agent should direct caller to nearest stocked store or online ordering.
+
+### Inventory data format (in Product2.Description)
+
+```
+INVENTORY:{"online":38,"Charlotte NC":14,"Chicago IL":9,"Houston TX":11}
+```
+
+To update stock levels: update the `Description` field of the Product2 record via Salesforce UI or `update_record` MCP tool. No server code changes needed.
+
+---
 
 ### Adding a new demo customer's stores
 
